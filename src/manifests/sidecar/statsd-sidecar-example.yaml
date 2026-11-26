@@ -1,0 +1,45 @@
+# ============================================================================
+# Sidecar 模式教学示例：业务 Pod + 统计采集 sidecar
+# ============================================================================
+# 教学形态对应「Sidecar 模式」：在业务 Pod 内附加一个采集容器，
+# 收集业务进程产生的指标（此处以 statsd 协议为最小示例）。
+#
+# demo-app 为占位业务容器，请替换为真实业务镜像；
+# statsd 侧车容器监听 UDP 8125，将指标转发给 Prometheus 抓取。
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-statsd
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: demo-app-statsd
+  template:
+    metadata:
+      labels:
+        name: demo-app-statsd
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9102"
+    spec:
+      containers:
+        - name: demo-app
+          image: nginx:1.27
+          imagePullPolicy: IfNotPresent
+        - name: statsd-exporter
+          image: prom/statsd-exporter:v0.26.1
+          ports:
+            - name: statsd
+              containerPort: 8125
+              protocol: UDP
+            - name: metrics
+              containerPort: 9102
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 32m
+              memory: 24Mi

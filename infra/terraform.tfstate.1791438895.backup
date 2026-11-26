@@ -1,0 +1,39 @@
+{
+  "version": 4,
+  "terraform_version": "1.9.8",
+  "serial": 28,
+  "lineage": "090fe945-6873-4d85-ff97-dd0f5a7de5f0",
+  "outputs": {},
+  "resources": [
+    {
+      "mode": "managed",
+      "type": "huaweicloud_vpc",
+      "name": "main",
+      "provider": "provider[\"registry.terraform.io/huaweicloud/huaweicloud\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "block_service_endpoint_states": null,
+            "cidr": "10.0.0.0/16",
+            "description": "",
+            "enhanced_local_route": "false",
+            "enterprise_project_id": "0",
+            "id": "bdbb52b0-d60d-4895-b660-aece00b21971",
+            "name": "container-obs-vpc",
+            "region": "cn-north-4",
+            "routes": [],
+            "secondary_cidr": null,
+            "secondary_cidrs": [],
+            "status": "OK",
+            "tags": {},
+            "timeouts": null
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6MTgwMDAwMDAwMDAwfX0="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

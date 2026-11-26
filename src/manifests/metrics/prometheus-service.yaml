@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: observability
+data:
+  prometheus.yml: "global:\n  scrape_interval: 30s\n  evaluation_interval: 30s\n\n\
+    scrape_configs:\n  - job_name: node-exporter\n    kubernetes_sd_configs:\n   \
+    \   - role: pod\n    relabel_configs:\n      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]\n\
+    \        action: keep\n        regex: node-exporter\n      - source_labels: [__meta_kubernetes_pod_ip]\n\
+    \        target_label: __address__\n        replacement: \"${1}:9100\"\n     \
+    \ - source_labels: [__meta_kubernetes_namespace]\n        target_label: namespace\n\
+    \n  - job_name: kube-state-metrics\n    kubernetes_sd_configs:\n      - role:\
+    \ service\n    relabel_configs:\n      - source_labels: [__meta_kubernetes_service_name]\n\
+    \        action: keep\n        regex: kube-state-metrics\n      - source_labels:\
+    \ [__meta_kubernetes_namespace]\n        action: keep\n        regex: observability\n\
+    \      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]\n\
+    \        action: keep\n        regex: \"true\"\n\n  - job_name: kubernetes-pods\n\
+    \    kubernetes_sd_configs:\n      - role: pod\n    relabel_configs:\n      -\
+    \ source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n   \
+    \     action: keep\n        regex: \"true\"\n      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n\
+    \        action: replace\n        target_label: __metrics_path__\n        regex:\
+    \ (.+)\n      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n\
+    \        action: replace\n        regex: ([^:]+)(?::\\d+)?;(\\d+)\n        replacement:\
+    \ $1:$2\n        target_label: __address__\n      - source_labels: [__meta_kubernetes_namespace]\n\
+    \        target_label: namespace\n      - source_labels: [__meta_kubernetes_pod_name]\n\
+    \        target_label: pod\n"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+    spec:
+      serviceAccountName: observability-collector
+      containers:
+      - name: prometheus
+        image: swr.cn-north-4.myhuaweicloud.com/container-obs/prometheus:v2.53.0
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=7d
+        ports:
+        - name: web
+          containerPort: 9090
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+        - name: data
+          mountPath: /prometheus
+      volumes:
+      - name: config
+        configMap:
+          name: prometheus-config
+      - name: data
+        emptyDir: {}
+      imagePullSecrets:
+      - name: swr-pull-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  selector:
+    app.kubernetes.io/name: prometheus
+  ports:
+  - name: web
+    port: 9090
+    targetPort: web
