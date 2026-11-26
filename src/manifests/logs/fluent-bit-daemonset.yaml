@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: observability
+  labels:
+    k8s-app: fluent-bit
+data:
+  fluent-bit.conf: "[SERVICE]\n    Flush                    5\n    Grace         \
+    \           10\n    Log_Level                info\n    Parsers_File          \
+    \   parsers.conf\n    storage.path             /var/fluent-bit/state/flb-storage/\n\
+    \    storage.sync             normal\n    storage.backlog.mem_limit 5M\n\n@INCLUDE\
+    \ application-log.conf\n"
+  parsers.conf: "[PARSER]\n    Name        docker\n    Format      json\n    Time_Key\
+    \    time\n    Time_Format %Y-%m-%dT%H:%M:%S.%L\n\n[PARSER]\n    Name        cri\n\
+    \    Format      regex\n    Regex       ^(?<time>[^ ]+) (?<stream>stdout|stderr)\
+    \ (?<logtag>[^ ]*) (?<message>.*)$\n    Time_Key    time\n    Time_Format %Y-%m-%dT%H:%M:%S.%L%z\n"
+  application-log.conf: "[INPUT]\n    Name                tail\n    Tag          \
+    \       application.*\n    Exclude_Path        /var/log/containers/fluent-bit*,\
+    \ /var/log/containers/node-exporter*\n    Path                /var/log/containers/*.log\n\
+    \    multiline.parser    docker, cri\n    DB                  /var/fluent-bit/state/flb_container.db\n\
+    \    Mem_Buf_Limit       50MB\n    Skip_Long_Lines     On\n    Refresh_Interval\
+    \    10\n    Rotate_Wait         30\n    storage.type        filesystem\n    Read_from_Head\
+    \      false\n\n[FILTER]\n    Name                kubernetes\n    Match      \
+    \         application.*\n    Kube_Tag_Prefix     application.var.log.containers.\n\
+    \    Annotations         Off\n    Labels              On\n\n# \u9ED8\u8BA4\u8F93\
+    \u51FA\u5230 stdout\uFF0C\u9A8C\u8BC1\u91C7\u96C6\u94FE\u8DEF\uFF1B\u751F\u4EA7\
+    \u73AF\u5883\u66FF\u6362\u4E3A LTS / Kafka \u6C47\u805A\u7AEF\u70B9\n[OUTPUT]\n\
+    \    Name                stdout\n    Match               application.*\n    Format\
+    \              json_lines\n"
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit
+    spec:
+      serviceAccountName: observability-collector
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:2.2.0
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: fluentbitstate
+          mountPath: /var/fluent-bit/state
+        - name: config
+          mountPath: /fluent-bit/etc
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluentbitstate
+        hostPath:
+          path: /var/fluent-bit/state
+      - name: config
+        configMap:
+          name: fluent-bit-config
+      imagePullSecrets:
+      - name: swr-pull-secret

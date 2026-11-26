@@ -1,0 +1,110 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Redis 内存使用量",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "redis_memory_used_bytes",
+          "legendFormat": "used",
+          "refId": "A"
+        },
+        {
+          "expr": "redis_memory_used_rss_bytes",
+          "legendFormat": "rss",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "Redis 连接数",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "redis_connected_clients",
+          "legendFormat": "clients",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "Redis 命令速率",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(redis_commands_total[5m]))",
+          "legendFormat": "{{instance}} total",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "Redis keyspace 命中率",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(redis_keyspace_hits_total[5m])) / (sum(rate(redis_keyspace_hits_total[5m])) + sum(rate(redis_keyspace_misses_total[5m])))",
+          "legendFormat": "hit ratio",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["container-observability", "redis"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "title": "容器观测 · Redis",
+  "uid": "container-obs-redis",
+  "version": 1
+}

@@ -1,0 +1,58 @@
+# ============================================================================
+# 示例流量：Redis 业务 + exporter（产生观测指标)
+# ============================================================================
+# 教学形态对应「示例流量」：部署一个会产生指标的业务（Redis），
+# 带 redis-exporter 供 Prometheus 抓取，验证指标采集链路。
+# 部署后可运行 redis-benchmark 生成流量（见 README 使用方法章节）。
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-demo
+  namespace: observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-demo
+  template:
+    metadata:
+      labels:
+        app: redis-demo
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9121"
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.2
+          ports:
+            - containerPort: 6379
+        - name: redis-exporter
+          image: oliver006/redis_exporter:v1.62.0
+          env:
+            - name: REDIS_ADDR
+              value: redis://localhost:6379
+          ports:
+            - containerPort: 9121
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 32m
+              memory: 24Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-demo
+  namespace: observability
+  labels:
+    app: redis-demo
+spec:
+  selector:
+    app: redis-demo
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379

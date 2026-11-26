@@ -1,0 +1,115 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "gnetId": null,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "节点 CPU 使用率（按节点）",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "title": "节点内存使用率（按节点）",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": { "fillOpacity": 30, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "title": "节点网络接收/发送速率",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": { "fillOpacity": 10, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(node_network_receive_bytes_total[5m]))",
+          "legendFormat": "{{instance}} rx",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (instance) (rate(node_network_transmit_bytes_total[5m]))",
+          "legendFormat": "{{instance}} tx",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "title": "节点磁盘 IO 速率",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": { "fillOpacity": 10, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(node_disk_read_bytes_total[5m]))",
+          "legendFormat": "{{instance}} read",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (instance) (rate(node_disk_written_bytes_total[5m]))",
+          "legendFormat": "{{instance}} written",
+          "refId": "B"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["container-observability", "node"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "",
+  "title": "容器观测 · 节点概览",
+  "uid": "container-obs-node-overview",
+  "version": 1
+}
